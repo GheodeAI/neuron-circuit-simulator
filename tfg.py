@@ -1,28 +1,45 @@
 import pandas as pd
-import numpy as np
+import numpy as np #cambiar random a np.random
 import random
 
 # Carga y selección de neuronas aceptables. Se leen 3 archivos csv que contienen datos sobre distintos tipos de neuronas.
 # De cada archivo se filtran las neuronas que son aceptables según los parámetros (freq_inter, freq_intra) que serán las que luego
 # se usarán en la simulación.
 
+#EMPIEZA UNO DESPUÉS
 # Carga de datos desde archivos CSV
 datos_RFB = pd.read_csv("RFB_valors.csv2", sep=';')
 # Convertir columnas a numérico (forzando errores a NaN (Not A Number) si hay valores no convertibles)
 datos_RFB["freq_inter"] = pd.to_numeric(datos_RFB["freq_inter"], errors='coerce')
 datos_RFB["freq_intra.ms."] = pd.to_numeric(datos_RFB["freq_intra.ms."], errors='coerce')
 # Aplicar filtros después de la conversión
-aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index.to_list()
+#aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index.to_list()
+#aceptables_RFB = aceptables_RFB[1:]
 
+aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index
+aceptables_RFB_pos = datos_RFB.reset_index().loc[aceptables_RFB].index.to_list() # Convertimos a posición (basado en fila)
+aceptables_RFB_pos = [i + 1 for i in aceptables_RFB_pos] # Como R empieza en 1, le sumamos 1
+
+#print(datos_RFB)
+print(aceptables_RFB)
+
+
+#EMPIEZA UNO ANTES
 datos_RS = pd.read_csv("RS_valors.csv2", sep=';')
 datos_RS["freq(ms)"] = pd.to_numeric(datos_RS["freq(ms)"], errors='coerce')
 aceptables_RS = datos_RS[(datos_RS["freq(ms)"] > 5) & (datos_RS["freq(ms)"] < 6)].index.to_list()
+aceptables_RS = aceptables_RS[1:]
+#print(datos_RS)
+print(aceptables_RS)
 
+#EMPIEZA UNO ANTES
 datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
-datos_RSB["freq_inter"] = pd.to_numeric(datos_RFB["freq_inter"], errors='coerce')
-datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RFB["freq_intra.ms."], errors='coerce')
+datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
+datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RSB["freq_intra.ms."], errors='coerce')
 aceptables_RSB = datos_RSB[(datos_RSB["freq_inter"] > 0.4) & (datos_RSB["freq_inter"] < 0.5) & (datos_RSB["freq_intra.ms."] < 20)].index.to_list()
-
+aceptables_RSB = aceptables_RSB[1:]
+#print(datos_RSB)
+print(aceptables_RSB)
 
 ##Caracterización neuronas##
 # Number of neurons of each class / Asignación del número de neuronas de cada tipo
@@ -40,14 +57,16 @@ ISe, ISi, ISB, IFB, A, RS, RSB, RFB = 5, 5, 0, 5, 1, 0, 10, 0
 # Three constants are needed to each class
 # Regular neurons depend on a Simple armonic Movement function, so they need angular velocity and Amplitud.
 # The constant "a" of the regular neurons depends on the period.
-h = random.choices(aceptables_RFB, k=RFB) if aceptables_RFB else [] #En R, si aceptables_RFB está vacío aquí lanzaba un error
-f = random.choices(aceptables_RS, k=RS) if aceptables_RS else []
-g = random.choices(aceptables_RSB, k=RSB) if aceptables_RSB else []
+h = np.random.choice(aceptables_RFB, size=RFB, replace=True).tolist() if aceptables_RFB else [] #En R, si aceptables_RFB está vacío aquí lanzaba un error
+f = np.random.choice(aceptables_RS, size=RS, replace=True).tolist() if aceptables_RS else []
+g = np.random.choice(aceptables_RSB, size=RSB, replace=True).tolist() if aceptables_RSB else []
+
 
 #Construyendo unas listas
 #Ej: crea una lista de 0.02 el número de ISe+ISi veces --> 5+5=10 --> [0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02]
 #datos_RS.loc[f, "a"].tolist()  -->  .loc[f, "a"] selecciona las filas f de la columna "a" y lo convierte a lista.
     #si f = [1, 3] y "a" en esas filas es [0.5, 0.6], entonces la lista = [0.5, 0.6]
+
 a = ([0.02] * (ISe + ISi) + [0.14] * ISB + [0.1] * IFB + [0.02] * A +
      datos_RS.loc[f, "a"].tolist() + datos_RSB.loc[g, "a"].tolist() + datos_RFB.loc[h, "a"].tolist())
 
@@ -63,6 +82,12 @@ d = ([8] * (ISe + ISi) + np.random.uniform(-8, -8, ISB).tolist() + np.random.uni
 
 periodo = d + datos_RS.loc[f, "period"].tolist() + datos_RSB.loc[g, "period"].tolist() + datos_RFB.loc[h, "period"].tolist()
 
+#print(a)
+#print(b)
+#print(c)
+#print(d)
+#print(periodo)
+
 
 ######## Diseño circuito ########
 num_irre = [ISe, ISi, ISB, IFB, A]
@@ -72,6 +97,7 @@ names_reg = ["RS", "RSB", "RFB"]
 
 cantidad_neu = num_irre + num_reg # Cuántas neuronas hay de cada tipo
 size = sum(cantidad_neu)  # Número total de neuronas
+
 
 
 # Creación de la matriz (circuito) de conexiones, con el tamaño (size) igual al número de neuronas
