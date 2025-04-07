@@ -103,7 +103,7 @@ tipos = np.repeat(nombres_neu, cantidad_neu)
 # la salida es burst = [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25], porque imprime los índices,
     # y al no haber ni ISe ni ISi, empieza imprimiendo el índice 10
 burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]]
-burst = burst[1:] + [burst[-1] + 1]
+#burst = burst[1:] + [burst[-1] + 1] # ????????
 
 # np.cumsum calcula la suma acumulativa de cantidad_neu ([5, 5, 0, 5, 1, 0, 10, 0]), por lo tanto --> [5, 10, 12, 17, 18, 18, 28, 28]
 # Pandas combina nombres_neu y np.cumsum(cantidad_neu) en un DataFrame, cuya salida es:
@@ -158,10 +158,10 @@ circuito_df = pd.DataFrame(circuito, columns=tipos, index=tipos)
 # Identificación de posiciones
 # Sacan en una lista los índices de las columnas correspondientes a neuronas irregulares --> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irreg]
-pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1]
+#pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1] # ????????
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
-pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]
+#pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]  # ????????
 
 ############################??????????????????????????????????????????????????????????????????????????????
 # generador aleatorio de   #
@@ -212,13 +212,13 @@ t = np.zeros(size)
 
 # grupos_nume <- round(size/grupos_tama+0.4) #???? (es R)
 grupo_tag = pd.factorize(circuito_df.columns)[0] + 1
-#print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5   !!!!!!!
+#print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5 !! (los nº van en función del orden alfabético)
 grupos_nume = max(grupo_tag)
 nombres_grupos = list(pd.factorize(circuito_df.columns)[1])
-#print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN!!!!!!!!
+#print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN!!!!!!!! (en R se imprimen por orden alfabético)
 # grupo_tag[which(tipos=="A")] <- grupos_nume #???? (es R)
 list_aferentes = np.where(circuito_df.columns == "A")[0]
-print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
+#print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
 
 
 ###################sim de disp####################
@@ -247,16 +247,20 @@ for j in range(tiempo):
     for i in range(1000):
         t = t + 1
 
-        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO
+        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO?
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         reg[pos_irreg] += a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
+        #print(volt[pos_irreg])
+        #print(reg[pos_irreg])
 
-        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO
+
+        ####################################A PARITR DE AQUÍ DAN ERRORES############################################
+        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO?
         #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         volt[pos_reg]=volt[pos_reg] + 0.5* ((0.04*volt[pos_reg]+5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        #print(volt[pos_reg])
+        print(volt[pos_reg])
         reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
         #reg[pos_reg] = reg[pos_reg] - np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
         #print(reg[pos_reg])
