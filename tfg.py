@@ -100,10 +100,10 @@ tipos = np.repeat(nombres_neu, cantidad_neu)
 
 # Si t (un elemento de tipos) está en ["IFB", "ISB", "RSB", "RFB"]
 # enumerate(tipos) genera pares (i, t), donde i es el índice y t es el tipo de neurona en tipos
-# la salida es burst = [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25], por que imprime los índices,
+# la salida es burst = [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25], porque imprime los índices,
     # y al no haber ni ISe ni ISi, empieza imprimiendo el índice 10
-burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]] #EMPIEZA UNO ANTES QUE EN R!!!!!
-#print(burst)
+burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]]
+burst = burst[1:] + [burst[-1] + 1]
 
 # np.cumsum calcula la suma acumulativa de cantidad_neu ([5, 5, 0, 5, 1, 0, 10, 0]), por lo tanto --> [5, 10, 12, 17, 18, 18, 28, 28]
 # Pandas combina nombres_neu y np.cumsum(cantidad_neu) en un DataFrame, cuya salida es:
@@ -158,17 +158,17 @@ circuito_df = pd.DataFrame(circuito, columns=tipos, index=tipos)
 # Identificación de posiciones
 # Sacan en una lista los índices de las columnas correspondientes a neuronas irregulares --> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irreg]
+pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1]
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
-#print(pos_reg) #EMPIEZA UNO DESPUÉS QUE EN R !!!!!!!!!
-#print(pos_irreg) #EMPIEZA UNO ANTES QUE EN R !!!!!!!!!
+pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]
 
-############################???????????????????????????????????????????????????????????????????????????????????????
+############################??????????????????????????????????????????????????????????????????????????????
 # generador aleatorio de   #
 #         conexiones       #
 ############################
 
-# the function "conexiones" create conexion between two types of neurons
+# the function "conexiones" create a connection between two types of neurons
 
 # circuito[which(tipos=="RSB"),which(tipos=="RS")] <- conexiones(RSB,RS,13,4)
 # circuito[which(tipos=="RS"),which(tipos=="RFB")] <- conexiones(RS,RFB,-13,4)
@@ -212,13 +212,13 @@ t = np.zeros(size)
 
 # grupos_nume <- round(size/grupos_tama+0.4) #???? (es R)
 grupo_tag = pd.factorize(circuito_df.columns)[0] + 1
-#print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5
+#print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5   !!!!!!!
 grupos_nume = max(grupo_tag)
 nombres_grupos = list(pd.factorize(circuito_df.columns)[1])
-#print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN
+#print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN!!!!!!!!
 # grupo_tag[which(tipos=="A")] <- grupos_nume #???? (es R)
 list_aferentes = np.where(circuito_df.columns == "A")[0]
-#print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
+print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
 
 
 ###################sim de disp####################
