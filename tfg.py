@@ -162,6 +162,8 @@ pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irre
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
 #pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]  # ????????
+#print(pos_irreg)
+#print(pos_reg)
 
 ############################??????????????????????????????????????????????????????????????????????????????
 # generador aleatorio de   #
@@ -203,6 +205,7 @@ volt = c.copy()
 reg = np.full(size, -13)
 inputs = np.zeros(size)
 
+
 lim = sum(num_irre)
 
 a = np.array(a)
@@ -237,7 +240,6 @@ b = np.array(b, dtype=np.float64)
 reg = np.array(reg, dtype=np.float64)
 
 
-
 for j in range(tiempo):
     grupocorto = [[] for _ in range(grupos_nume)]
     sim_short_con = []
@@ -254,21 +256,23 @@ for j in range(tiempo):
         #print(volt[pos_irreg])
         #print(reg[pos_irreg])
 
-
-        ####################################A PARITR DE AQUÍ DAN ERRORES############################################
+        ####################################A PARTIR DE AQUÍ DAN ERRORES############################################
         # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO?
         #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        volt[pos_reg]=volt[pos_reg] + 0.5* ((0.04*volt[pos_reg]+5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        print(volt[pos_reg])
-        reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
+        #volt[pos_reg]=volt[pos_reg] + (0.5* ((0.04*volt[pos_reg]+5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg]))
+        #volt[pos_reg] = volt[pos_reg] + (0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg]))
+        #print(volt[pos_reg])
+        reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg] #ESTÁ BIEN (?)
         #reg[pos_reg] = reg[pos_reg] - np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
         #print(reg[pos_reg])
 
         inputs.fill(0)
-        '''
+
         # Si volt supera los 30 se considera un disparo
+        #print(volt)
         disp = np.where(volt > 30)[0]
+        #print(disp)
         if disp.size > 0:
             DR = np.intersect1d(pos_reg, disp)
             DI = np.intersect1d(pos_irreg, disp)
@@ -312,4 +316,3 @@ for j in range(tiempo):
 maximo = max(len(s) for s in sim)
 final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(sim[i])) for i in range(size)})
 final.columns = tipos
-'''
