@@ -1,45 +1,29 @@
 import pandas as pd
-import numpy as np #cambiar random a np.random
-import random
+import numpy as np
 
 # Carga y selección de neuronas aceptables. Se leen 3 archivos csv que contienen datos sobre distintos tipos de neuronas.
 # De cada archivo se filtran las neuronas que son aceptables según los parámetros (freq_inter, freq_intra) que serán las que luego
 # se usarán en la simulación.
-
-#EMPIEZA UNO DESPUÉS
 # Carga de datos desde archivos CSV
 datos_RFB = pd.read_csv("RFB_valors.csv2", sep=';')
 # Convertir columnas a numérico (forzando errores a NaN (Not A Number) si hay valores no convertibles)
 datos_RFB["freq_inter"] = pd.to_numeric(datos_RFB["freq_inter"], errors='coerce')
 datos_RFB["freq_intra.ms."] = pd.to_numeric(datos_RFB["freq_intra.ms."], errors='coerce')
 # Aplicar filtros después de la conversión
-#aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index.to_list()
-#aceptables_RFB = aceptables_RFB[1:]
+aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index.to_list()
+aceptables_RFB = aceptables_RFB[1:] + [aceptables_RFB[-1] + 1]
 
-aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index
-aceptables_RFB_pos = datos_RFB.reset_index().loc[aceptables_RFB].index.to_list() # Convertimos a posición (basado en fila)
-aceptables_RFB_pos = [i + 1 for i in aceptables_RFB_pos] # Como R empieza en 1, le sumamos 1
-
-#print(datos_RFB)
-print(aceptables_RFB)
-
-
-#EMPIEZA UNO ANTES
 datos_RS = pd.read_csv("RS_valors.csv2", sep=';')
 datos_RS["freq(ms)"] = pd.to_numeric(datos_RS["freq(ms)"], errors='coerce')
 aceptables_RS = datos_RS[(datos_RS["freq(ms)"] > 5) & (datos_RS["freq(ms)"] < 6)].index.to_list()
-aceptables_RS = aceptables_RS[1:]
-#print(datos_RS)
-print(aceptables_RS)
+aceptables_RS = aceptables_RS[1:] + [aceptables_RS[-1] + 1]
 
-#EMPIEZA UNO ANTES
 datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
 datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
 datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RSB["freq_intra.ms."], errors='coerce')
 aceptables_RSB = datos_RSB[(datos_RSB["freq_inter"] > 0.4) & (datos_RSB["freq_inter"] < 0.5) & (datos_RSB["freq_intra.ms."] < 20)].index.to_list()
-aceptables_RSB = aceptables_RSB[1:]
-#print(datos_RSB)
-print(aceptables_RSB)
+aceptables_RSB = [x + 1 for x in aceptables_RSB]
+
 
 ##Caracterización neuronas##
 # Number of neurons of each class / Asignación del número de neuronas de cada tipo
@@ -55,7 +39,7 @@ ISe, ISi, ISB, IFB, A, RS, RSB, RFB = 5, 5, 0, 5, 1, 0, 10, 0
 
 # Selección de parámetros de cada neurona
 # Three constants are needed to each class
-# Regular neurons depend on a Simple armonic Movement function, so they need angular velocity and Amplitud.
+# Regular neurons depend on a Simple harmonious Movement function, so they need angular velocity and Amplitud.
 # The constant "a" of the regular neurons depends on the period.
 h = np.random.choice(aceptables_RFB, size=RFB, replace=True).tolist() if aceptables_RFB else [] #En R, si aceptables_RFB está vacío aquí lanzaba un error
 f = np.random.choice(aceptables_RS, size=RS, replace=True).tolist() if aceptables_RS else []
@@ -99,10 +83,9 @@ cantidad_neu = num_irre + num_reg # Cuántas neuronas hay de cada tipo
 size = sum(cantidad_neu)  # Número total de neuronas
 
 
-
 # Creación de la matriz (circuito) de conexiones, con el tamaño (size) igual al número de neuronas
 nombres_neu = names_irreg + names_reg # Contiene los tipos de neuronas
-circuito = np.zeros((size, size))  # Matriz de conexiones 26x26 llena de ceros, lo que reprsenta que
+circuito = np.zeros((size, size))  # Matriz de conexiones 26x26 llena de ceros, lo que representa que
                                     # inicialmente ninguna neurona está conectada con otra
 
 '''
@@ -119,7 +102,8 @@ tipos = np.repeat(nombres_neu, cantidad_neu)
 # enumerate(tipos) genera pares (i, t), donde i es el índice y t es el tipo de neurona en tipos
 # la salida es burst = [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25], por que imprime los índices,
     # y al no haber ni ISe ni ISi, empieza imprimiendo el índice 10
-burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]]
+burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]] #EMPIEZA UNO ANTES QUE EN R!!!!!
+#print(burst)
 
 # np.cumsum calcula la suma acumulativa de cantidad_neu ([5, 5, 0, 5, 1, 0, 10, 0]), por lo tanto --> [5, 10, 12, 17, 18, 18, 28, 28]
 # Pandas combina nombres_neu y np.cumsum(cantidad_neu) en un DataFrame, cuya salida es:
@@ -137,7 +121,7 @@ burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]]
 datos_conexiones = pd.DataFrame({"nombre": nombres_neu, "numero_neurons_tipo": np.cumsum(cantidad_neu)})
 
 # Creación de etiquetas para la matriz circuito. Se crea un DataFrame en el que cada fila y cada columna representa
-    # una neurona de tipos. El valor en cada celda representa la conexión entre dos tipos de neronas, inicialmente 0
+    # una neurona de tipos. El valor en cada celda representa la conexión entre dos tipos de neuronas, inicialmente 0
 # Salida:
 '''
 ISe  ISe  ISe  ISe  ISe  ISi  ISi  ...  RSB  RSB  RSB  RSB  RSB  RSB  RSB
@@ -176,7 +160,8 @@ circuito_df = pd.DataFrame(circuito, columns=tipos, index=tipos)
 pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irreg]
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
-
+#print(pos_reg) #EMPIEZA UNO DESPUÉS QUE EN R !!!!!!!!!
+#print(pos_irreg) #EMPIEZA UNO ANTES QUE EN R !!!!!!!!!
 
 ############################???????????????????????????????????????????????????????????????????????????????????????
 # generador aleatorio de   #
@@ -221,21 +206,21 @@ inputs = np.zeros(size)
 lim = sum(num_irre)
 
 a = np.array(a)
-reg = reg[:16] #RECORTAR REG A LOS PRIMEROS 16 ELEMENTOS, ¿AFFECTA ESTO EN ALGO?
-punto_medio = reg - b * np.cos(a * 0) / a - b * np.cos(a * np.pi / a) / a / 2 #NO ESTOY SEGURO SI ES CORRECTO
+punto_medio = reg - (b * np.cos(a * 0) / a - b * np.cos(a * np.pi / a) / a) / 2
 tclave = np.arccos((-16 - punto_medio) * a / b) / a
 t = np.zeros(size)
 
 # grupos_nume <- round(size/grupos_tama+0.4) #???? (es R)
-
-circuito = pd.DataFrame(circuito) #CONVERTIR CIRCUITO A DATAFRAME PARA PODER ACCEDER A CIRCUITO.COLUMNS
-grupo_tag = pd.factorize(circuito.columns)[0] + 1
+grupo_tag = pd.factorize(circuito_df.columns)[0] + 1
+#print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5
 grupos_nume = max(grupo_tag)
-nombres_grupos = list(pd.factorize(circuito.columns)[1])
+nombres_grupos = list(pd.factorize(circuito_df.columns)[1])
+#print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN
 # grupo_tag[which(tipos=="A")] <- grupos_nume #???? (es R)
-list_aferentes = np.where(circuito.columns == "A")[0]
+list_aferentes = np.where(circuito_df.columns == "A")[0]
+#print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
 
-'''
+
 ###################sim de disp####################
 
 # almacenar la actividad neuronal
@@ -244,11 +229,14 @@ sim_con = []
 sim_con_2 = []
 grupo = [[] for _ in range(grupos_nume)]
 
+
 #volt = np.pad(volt, (0, 26 - len(volt)), constant_values=-65)
 volt = np.array(volt, dtype=np.float64)
 a = np.array(a, dtype=np.float64)
 b = np.array(b, dtype=np.float64)
 reg = np.array(reg, dtype=np.float64)
+
+
 
 for j in range(tiempo):
     grupocorto = [[] for _ in range(grupos_nume)]
@@ -259,16 +247,22 @@ for j in range(tiempo):
     for i in range(1000):
         t = t + 1
 
+        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         reg[pos_irreg] += a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
 
-        volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
+        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO
+        #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
+        #volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
+        volt[pos_reg]=volt[pos_reg] + 0.5* ((0.04*volt[pos_reg]+5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
+        #print(volt[pos_reg])
         reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
+        #reg[pos_reg] = reg[pos_reg] - np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
+        #print(reg[pos_reg])
 
         inputs.fill(0)
-
+        '''
         # Si volt supera los 30 se considera un disparo
         disp = np.where(volt > 30)[0]
         if disp.size > 0:
