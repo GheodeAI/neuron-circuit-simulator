@@ -18,10 +18,10 @@ datos_RS["freq(ms)"] = pd.to_numeric(datos_RS["freq(ms)"], errors='coerce')
 aceptables_RS = datos_RS[(datos_RS["freq(ms)"] > 5) & (datos_RS["freq(ms)"] < 6)].index.to_list()
 #aceptables_RS = aceptables_RS[1:] + [aceptables_RS[-1] + 1]
 
-print("RFB indices:", aceptables_RFB)
-print(len(aceptables_RFB))
-print("RS indices:", aceptables_RS)
-print(len(aceptables_RS))
+#print("RFB indices:", aceptables_RFB)
+#print(len(aceptables_RFB))
+#print("RS indices:", aceptables_RS)
+#print(len(aceptables_RS))
 
 datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
 datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
@@ -257,7 +257,6 @@ for j in range(tiempo):
     for i in range(1000):
         t = t + 1
 
-        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO?
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         reg[pos_irreg] += a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
@@ -265,17 +264,13 @@ for j in range(tiempo):
         #print(volt[pos_irreg])
         #print(reg[pos_irreg])
 
-        ####################################A PARTIR DE AQUÍ DAN ERRORES############################################
-        # POR QUÉ HAY DOS LÍNEAS IGUALES AQUÍ AL PRINCIPIO?
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #volt[pos_reg] = volt[pos_reg] + 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #volt[pos_reg] = 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #print(volt[pos_reg])
-        reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg] #ESTÁ BIEN (?)
+        reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
         #print(volt)
-        #reg[pos_reg] = reg[pos_reg] - np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
-        #print(reg[pos_reg])
 
         inputs.fill(0)
 
@@ -286,7 +281,7 @@ for j in range(tiempo):
         if disp.size > 0:
             disp = disp.astype(int)
             #print(volt)
-            #print(disp)
+            print(disp)
             DR = np.intersect1d(pos_reg, disp)
             #print(DR)
             DI = np.intersect1d(pos_irreg, disp)
@@ -361,6 +356,10 @@ maximo = max(len(s) for s in sim) #!!!!! PARECE QUE SIEMPRE SACA ALREDEDOR DE 32
 final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(sim[i])) for i in range(size)})
 #print(final) #!!!!!!!!!!!!!!!!!!!!!!!!!!! EN R ES T0DO NA, AQUí NO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 final.columns = tipos
+
+
+
+
 
 
 
