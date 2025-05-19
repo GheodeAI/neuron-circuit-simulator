@@ -328,16 +328,6 @@ for j in range(tiempo):
         y = np.where(contador[:, 1] < contador2)[0]
         #print(y)
 
-        '''
-        if y.size > 0:
-            inputs = circuito[y, :].sum(axis=0) if y.size > 1 else circuito[y, :]
-            #print(inputs)
-            receptor = np.intersect1d(np.where(inputs != 0)[0], pos_reg)
-            #print(receptor)
-            t[receptor] = np.round(t[receptor] + ((tclave[receptor] - t[receptor] % (periodo[receptor] / 2)) * (inputs[receptor] / 20)))
-            print(t[receptor])
-            reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
-        '''
         if y.size > 0:
             inputs = circuito[y, :].sum(axis=0) if y.size > 1 else circuito[y, :].reshape(-1)
             # print(inputs)
@@ -372,21 +362,35 @@ final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(s
 #print(final) #!!!!!!!!!!!!!!!!!!!!!!!!!!! EN R ES T0DO NA, AQUí NO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 final.columns = tipos
 
+
+
+
+
+
+
+
+
+
+
 '''
-# Paso 1: agregar sim_con a grupo (si aplica, este paso depende del contexto completo)
 grupo.append(sim_con)  # <-- si tienes este paso, mantenlo
-# Paso 2: calcular el máximo largo de las listas en `sim`
 maximo = max(len(s) for s in sim)
-# Paso 3: crear un DataFrame de NaNs con maximo filas y size columnas
 final = pd.DataFrame(np.nan, index=range(maximo), columns=range(size))
-# Paso 4: rellenar columna por columna con los valores de sim[i]
 for i in range(size):
     final.iloc[:len(sim[i]), i] = sim[i]
-# Paso 5: generar nombres como U01, U02, ..., Uxx
 colnames_temp = [f"U{str(i + 1).zfill(2)}" for i in range(size)]
 final.columns = colnames_temp
-# Paso 6: reemplazar nombres de columnas por `tipos`
 final.columns = tipos
-# Mostrar resultado final
 print(final)
+'''
+
+'''
+if y.size > 0:
+    inputs = circuito[y, :].sum(axis=0) if y.size > 1 else circuito[y, :]
+    #print(inputs)
+    receptor = np.intersect1d(np.where(inputs != 0)[0], pos_reg)
+    #print(receptor)
+    t[receptor] = np.round(t[receptor] + ((tclave[receptor] - t[receptor] % (periodo[receptor] / 2)) * (inputs[receptor] / 20)))
+    print(t[receptor])
+    reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
 '''
