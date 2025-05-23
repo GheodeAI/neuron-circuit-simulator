@@ -27,7 +27,7 @@ datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
 datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
 datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RSB["freq_intra.ms."], errors='coerce')
 aceptables_RSB = datos_RSB[(datos_RSB["freq_inter"] > 0.4) & (datos_RSB["freq_inter"] < 0.5) & (datos_RSB["freq_intra.ms."] < 20)].index.to_list()
-aceptables_RSB = [x + 1 for x in aceptables_RSB]
+# aceptables_RSB = [x + 1 for x in aceptables_RSB] #############################################
 
 
 ##Caracterización neuronas##
@@ -281,7 +281,7 @@ for j in range(tiempo):
         if disp.size > 0:
             disp = disp.astype(int)
             #print(volt)
-            print(disp)
+            #print(disp)
             DR = np.intersect1d(pos_reg, disp)
             #print(DR)
             DI = np.intersect1d(pos_irreg, disp)
@@ -304,15 +304,18 @@ for j in range(tiempo):
             #print(reg[DA])
 
             for k in disp:
-                sim_short[k].append(j + i / 1000)###################!!!!!#####################en R el primer número es 1,9xx, 0,9xx
+                #CREAR VARIABLE j+1
+                #POSIBLE ERRATA EN j + i / 1000
+                sim_short[k].append(j+1 + (i+1) / 1000)
                 #print(sim_short[k])
-                grupocorto[grupo_tag[k] - 1].append(j + i / 1000)###################!!!!!#####################en R el primer número es 1,9xx, 0,9xx
+                #grupocorto[grupo_tag[k] - 1].append(j+1 + (i+1) / 1000)
+                grupocorto[grupo_tag[k]-1].append(j + 1 + (i + 1) / 1000)
                 #print(grupocorto[grupo_tag[k] - 1])
                 if k not in burst:
-                    sim_short_con_2.append(j + i / 1000)
+                    sim_short_con_2.append(j+1 + (i+1) / 1000)
                     #print(sim_short_con_2)
                 if k not in list_aferentes:
-                    sim_short_con.append(j + i / 1000)
+                    sim_short_con.append(j+1 + (i+1)/ 1000)
                     #print(sim_short_con)
 
         contador2 = np.ceil(contador[:, 0] / delays)
@@ -344,21 +347,30 @@ for j in range(tiempo):
     sim_con_2.extend(sim_short_con_2)
     #print(sim_con_2)
     for i in range(size):
-        sim[i].extend(sim_short[i]) #!!!!!!!!!!!!!!!!!!! EN R SIEMPRE LOS NÚMEROS SON UNO MÁS, OTRA VEZ EL PROBLEMA DEL 1,9XX
+        sim[i].extend(sim_short[i])
         #print(sim[i])
     for i in range(grupos_nume):
-        grupo[i].extend(grupocorto[i]) #!!!!!!!!!!!!!!!!!!! EN R SIEMPRE LOS NÚMEROS SON UNO MÁS, OTRA VEZ EL PROBLEMA DEL 1,9XX
+        grupo[i].extend(grupocorto[i])
         #print(grupo[i])
 
 # Convertir la simulación final en un DataFrame
 maximo = max(len(s) for s in sim) #!!!!! PARECE QUE SIEMPRE SACA ALREDEDOR DE 320/330, EN CAMBIO EN R SACA ALREDEDOR DE 240 !!!!!!
 #print(maximo)
 final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(sim[i])) for i in range(size)})
-#print(final) #!!!!!!!!!!!!!!!!!!!!!!!!!!! EN R ES T0DO NA, AQUí NO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#print(sim)
+print(final)
+
+#GUARDARME 'FINAL' EN UN ARCHIVO Y COMPARARLO CON R
+#HACERLO UNAS 10 VECES Y CALCULAR MEDIA Y VER QUE EN AMBAS SEAN PARECIDAS
+
 final.columns = tipos
 
 
-
+#MEDIR TIEMPOS DE EJECUCION ANTES Y DE DESPUES DE HACER LA OPTIMIZACION, VARIAS VECES
+#OPTIMIZAR EL CODIGO:
+    # VECTORIZARLO
+        # REEMPLAZAR BUCLES POR OPERACIONES CON VECTORES
+        # REEMPLAZAR LOS IFs POR UN VECTOR DE BOOLEANOS
 
 
 
