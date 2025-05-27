@@ -11,12 +11,10 @@ datos_RFB["freq_inter"] = pd.to_numeric(datos_RFB["freq_inter"], errors='coerce'
 datos_RFB["freq_intra.ms."] = pd.to_numeric(datos_RFB["freq_intra.ms."], errors='coerce')
 # Aplicar filtros después de la conversión
 aceptables_RFB = datos_RFB[(datos_RFB["freq_inter"] > 2) & (datos_RFB["freq_inter"] < 9) & (datos_RFB["freq_intra.ms."] > 100)].index.to_list()
-#aceptables_RFB = aceptables_RFB[1:] + [aceptables_RFB[-1] + 1]
 
 datos_RS = pd.read_csv("RS_valors.csv2", sep=';')
 datos_RS["freq(ms)"] = pd.to_numeric(datos_RS["freq(ms)"], errors='coerce')
 aceptables_RS = datos_RS[(datos_RS["freq(ms)"] > 5) & (datos_RS["freq(ms)"] < 6)].index.to_list()
-#aceptables_RS = aceptables_RS[1:] + [aceptables_RS[-1] + 1]
 
 #print("RFB indices:", aceptables_RFB)
 #print(len(aceptables_RFB))
@@ -27,7 +25,6 @@ datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
 datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
 datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RSB["freq_intra.ms."], errors='coerce')
 aceptables_RSB = datos_RSB[(datos_RSB["freq_inter"] > 0.4) & (datos_RSB["freq_inter"] < 0.5) & (datos_RSB["freq_intra.ms."] < 20)].index.to_list()
-# aceptables_RSB = [x + 1 for x in aceptables_RSB] #############################################
 
 
 ##Caracterización neuronas##
@@ -44,7 +41,7 @@ ISe, ISi, ISB, IFB, A, RS, RSB, RFB = 5, 5, 0, 5, 1, 0, 10, 0
 
 # Selección de parámetros de cada neurona
 # Three constants are needed to each class
-# Regular neurons depend on a Simple harmonious Movement function, so they need angular velocity and Amplitud.
+# Regular neurons depend on a Simple harmonious Movement function, so they need angular velocity and amplitude.
 # The constant "a" of the regular neurons depends on the period.
 h = np.random.choice(aceptables_RFB, size=RFB, replace=True).tolist() if aceptables_RFB else [] #En R, si aceptables_RFB está vacío aquí lanzaba un error
 f = np.random.choice(aceptables_RS, size=RS, replace=True).tolist() if aceptables_RS else []
@@ -109,7 +106,6 @@ tipos = np.repeat(nombres_neu, cantidad_neu)
 # la salida es burst = [10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25], porque imprime los índices,
     # y al no haber ni ISe ni ISi, empieza imprimiendo el índice 10
 burst = [i for i, t in enumerate(tipos) if t in ["IFB", "ISB", "RSB", "RFB"]]
-#burst = burst[1:] + [burst[-1] + 1] # ????????
 
 # np.cumsum calcula la suma acumulativa de cantidad_neu ([5, 5, 0, 5, 1, 0, 10, 0]), por lo tanto --> [5, 10, 12, 17, 18, 18, 28, 28]
 # Pandas combina nombres_neu y np.cumsum(cantidad_neu) en un DataFrame, cuya salida es:
@@ -164,14 +160,13 @@ circuito_df = pd.DataFrame(circuito, columns=tipos, index=tipos)
 # Identificación de posiciones
 # Sacan en una lista los índices de las columnas correspondientes a neuronas irregulares --> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irreg]
-#pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1] # ????????
+
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
-#pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]  # ????????
 #print(pos_irreg)
 #print(pos_reg)
 
-############################??????????????????????????????????????????????????????????????????????????????
+############################???????????????????????????????????????????????????????????????????????????
 # generador aleatorio de   #
 #         conexiones       #
 ############################
@@ -239,7 +234,6 @@ sim_con_2 = []
 grupo = [[] for _ in range(grupos_nume)]
 
 
-#volt = np.pad(volt, (0, 26 - len(volt)), constant_values=-65)
 #print(volt)
 volt = np.array(volt, dtype=np.float64)
 #print(volt)
@@ -266,8 +260,6 @@ for j in range(tiempo):
 
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        #volt[pos_reg] = volt[pos_reg] + 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        #volt[pos_reg] = 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         #print(volt[pos_reg])
         reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
         #print(volt)
@@ -294,10 +286,10 @@ for j in range(tiempo):
             contador[disp, 1] += 1
             #print(contador[disp, 1])
 
-            c = np.array(c) ###############hacer conversión justo cuando defino c
+            c = np.array(c) ##################################hacer conversión justo cuando defino c
             volt[disp] = c[disp]
             #print(volt[disp])
-            d = np.array(d) ###############hacer conversión justo cuando defino d
+            d = np.array(d) ####################################hacer conversión justo cuando defino d
             reg[DI] += d[DI]
             #print(reg[DI])
             reg[DA] = -13
@@ -342,7 +334,7 @@ for j in range(tiempo):
             reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
             #print(reg[receptor])
 
-    sim_con.extend(sim_short_con) #!!!!!!!!!!!!!!!!!!! EN R SIEMPRE EMPIEZA EN 0 Y LUEGO CONTINUA CON 1,9XX
+    sim_con.extend(sim_short_con)
     #print(sim_con)
     sim_con_2.extend(sim_short_con_2)
     #print(sim_con_2)
@@ -354,23 +346,16 @@ for j in range(tiempo):
         #print(grupo[i])
 
 # Convertir la simulación final en un DataFrame
-maximo = max(len(s) for s in sim) #!!!!! PARECE QUE SIEMPRE SACA ALREDEDOR DE 320/330, EN CAMBIO EN R SACA ALREDEDOR DE 240 !!!!!!
+maximo = max(len(s) for s in sim)
 #print(maximo)
 final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(sim[i])) for i in range(size)})
 #print(sim)
 print(final)
+final.columns = tipos
 
 #GUARDARME 'FINAL' EN UN ARCHIVO Y COMPARARLO CON R
 #HACERLO UNAS 10 VECES Y CALCULAR MEDIA Y VER QUE EN AMBAS SEAN PARECIDAS
-
-final.columns = tipos
-
-
-#MEDIR TIEMPOS DE EJECUCION ANTES Y DE DESPUES DE HACER LA OPTIMIZACION, VARIAS VECES
-#OPTIMIZAR EL CODIGO:
-    # VECTORIZARLO
-        # REEMPLAZAR BUCLES POR OPERACIONES CON VECTORES
-        # REEMPLAZAR LOS IFs POR UN VECTOR DE BOOLEANOS
+#MEDIR TIEMPOS DE EJECUCIÓN ANTES Y DE DESPUÉS DE HACER LA OPTIMIZACIÓN, VARIAS VECES
 
 
 
@@ -382,6 +367,15 @@ final.columns = tipos
 
 
 
+
+#aceptables_RFB = aceptables_RFB[1:] + [aceptables_RFB[-1] + 1]
+#aceptables_RS = aceptables_RS[1:] + [aceptables_RS[-1] + 1]
+# aceptables_RSB = [x + 1 for x in aceptables_RSB]
+
+#burst = burst[1:] + [burst[-1] + 1]
+
+#pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1]
+#pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]
 
 '''
 grupo.append(sim_con)  # <-- si tienes este paso, mantenlo
