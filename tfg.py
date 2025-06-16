@@ -241,7 +241,7 @@ a = np.array(a, dtype=np.float64)
 b = np.array(b, dtype=np.float64)
 reg = np.array(reg, dtype=np.float64)
 
-
+#Se repite 100 veces
 for j in range(tiempo):
     grupocorto = [[] for _ in range(grupos_nume)]
     sim_short_con = []
@@ -352,6 +352,15 @@ final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(s
 #print(sim)
 print(final)
 final.columns = tipos
+
+# Guardamos la salida de 'final' en un csv, con separación de ';' y sin la primera columna ni el encabezado,
+#   únicamente los datos
+final.to_csv("salida_final_python3.csv", index=False, header=False, sep=';') #Donde pone NaN no se pone nada en el excel??
+                                                                            # es lo mismo nada que un cero????
+
+
+
+
 
 #GUARDARME 'FINAL' EN UN ARCHIVO Y COMPARARLO CON R
 #HACERLO UNAS 10 VECES Y CALCULAR MEDIA Y VER QUE EN AMBAS SEAN PARECIDAS
