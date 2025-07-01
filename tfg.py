@@ -16,11 +16,6 @@ datos_RS = pd.read_csv("RS_valors.csv2", sep=';')
 datos_RS["freq(ms)"] = pd.to_numeric(datos_RS["freq(ms)"], errors='coerce')
 aceptables_RS = datos_RS[(datos_RS["freq(ms)"] > 5) & (datos_RS["freq(ms)"] < 6)].index.to_list()
 
-#print("RFB indices:", aceptables_RFB)
-#print(len(aceptables_RFB))
-#print("RS indices:", aceptables_RS)
-#print(len(aceptables_RS))
-
 datos_RSB = pd.read_csv("RSB_valors.csv2", sep=';')
 datos_RSB["freq_inter"] = pd.to_numeric(datos_RSB["freq_inter"], errors='coerce')
 datos_RSB["freq_intra.ms."] = pd.to_numeric(datos_RSB["freq_intra.ms."], errors='coerce')
@@ -69,12 +64,6 @@ d = ([8] * (ISe + ISi) + np.random.uniform(-8, -8, ISB).tolist() + np.random.uni
 periodo = d + datos_RS.loc[f, "period"].tolist() + datos_RSB.loc[g, "period"].tolist() + datos_RFB.loc[h, "period"].tolist()
 periodo = np.array(periodo)
 
-#print(a)
-#print(b)
-#print(c)
-#print(d)
-#print(periodo)
-
 
 ######## Diseño circuito ########
 num_irre = [ISe, ISi, ISB, IFB, A]
@@ -84,7 +73,6 @@ names_reg = ["RS", "RSB", "RFB"]
 
 cantidad_neu = num_irre + num_reg # Cuántas neuronas hay de cada tipo
 size = sum(cantidad_neu)  # Número total de neuronas
-
 
 # Creación de la matriz (circuito) de conexiones, con el tamaño (size) igual al número de neuronas
 nombres_neu = names_irreg + names_reg # Contiene los tipos de neuronas
@@ -163,13 +151,11 @@ pos_irreg = [i for i, col in enumerate(circuito_df.columns) if col in names_irre
 
 # Sacan en una lista los índices de las columnas correspondientes a neuronas regulares --> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
-#print(pos_irreg)
-#print(pos_reg)
 
-############################???????????????????????????????????????????????????????????????????????????
+############################
 # generador aleatorio de   #
 #         conexiones       #
-############################
+############################ Este código continúa siendo R
 
 # the function "conexiones" create a connection between two types of neurons
 
@@ -191,7 +177,7 @@ pos_reg = [i for i, col in enumerate(circuito_df.columns) if col in names_reg]
 #        SIMULACIÓN         #
 #############################
 
-# library("plot.matrix") #???? (es R)
+# library("plot.matrix") #(es R)
 
 ######### Parámetros controlables del circuito############
 max_delay = 5 # Establece un valor máximo para el retraso que se puede generar
@@ -206,7 +192,6 @@ volt = c.copy()
 reg = np.full(size, -13)
 inputs = np.zeros(size)
 
-
 lim = sum(num_irre)
 
 a = np.array(a)
@@ -214,13 +199,13 @@ punto_medio = reg - (b * np.cos(a * 0) / a - b * np.cos(a * np.pi / a) / a) / 2
 tclave = np.arccos((-16 - punto_medio) * a / b) / a
 t = np.zeros(size)
 
-# grupos_nume <- round(size/grupos_tama+0.4) #???? (es R)
+# grupos_nume <- round(size/grupos_tama+0.4) #(es R)
 grupo_tag = pd.factorize(circuito_df.columns)[0] + 1
 #print(grupo_tag)   # en R imprime esto -->  3 3 3 3 3 4 4 4 4 4 2 2 2 2 2 1 5 5 5 5 5 5 5 5 5 5 !! (los nº van en función del orden alfabético)
 grupos_nume = max(grupo_tag)
 nombres_grupos = list(pd.factorize(circuito_df.columns)[1])
 #print(nombres_grupos) #EN R LO IMPRIME EN OTRO ORDEN!!!!!!!! (en R se imprimen por orden alfabético)
-# grupo_tag[which(tipos=="A")] <- grupos_nume #???? (es R)
+# grupo_tag[which(tipos=="A")] <- grupos_nume #(es R)
 list_aferentes = np.where(circuito_df.columns == "A")[0]
 #print(list_aferentes) #EN R IMPRIME 16 Y AQUÍ 15, PORQUE AQUÍ SE EMPIEZA A CONTAR DESDE 0
 
@@ -233,10 +218,7 @@ sim_con = []
 sim_con_2 = []
 grupo = [[] for _ in range(grupos_nume)]
 
-
-#print(volt)
 volt = np.array(volt, dtype=np.float64)
-#print(volt)
 a = np.array(a, dtype=np.float64)
 b = np.array(b, dtype=np.float64)
 reg = np.array(reg, dtype=np.float64)
@@ -254,75 +236,48 @@ for j in range(tiempo):
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         volt[pos_irreg] += 0.5 * ((0.04 * volt[pos_irreg] + 5) * volt[pos_irreg] + 140 - reg[pos_irreg] + inputs[pos_irreg])
         reg[pos_irreg] += a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
-        #print(volt)
-        #print(volt[pos_irreg])
-        #print(reg[pos_irreg])
 
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
         volt[pos_reg] += 0.5 * ((0.04 * volt[pos_reg] + 5) * volt[pos_reg] + 140 - reg[pos_reg] + inputs[pos_reg])
-        #print(volt[pos_reg])
         reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
-        #print(volt)
 
         inputs.fill(0)
 
         # Si volt supera los 30 se considera un disparo
-        #print(volt)
         disp = np.where(volt > 30)[0]
-        #print(disp)
         if disp.size > 0:
             disp = disp.astype(int)
-            #print(volt)
-            #print(disp)
             DR = np.intersect1d(pos_reg, disp)
-            #print(DR)
             DI = np.intersect1d(pos_irreg, disp)
-            #print(DI)
             DA = np.intersect1d(disp, list_aferentes)
-            #print(DA)
 
             contador[disp, 0] += delays[disp]
-            #print(contador[disp, 0])
             contador[disp, 1] += 1
-            #print(contador[disp, 1])
 
             c = np.array(c) ##################################hacer conversión justo cuando defino c
             volt[disp] = c[disp]
-            #print(volt[disp])
             d = np.array(d) ####################################hacer conversión justo cuando defino d
             reg[DI] += d[DI]
-            #print(reg[DI])
             reg[DA] = -13
-            #print(reg[DA])
 
             for k in disp:
                 #CREAR VARIABLE j+1
                 #POSIBLE ERRATA EN j + i / 1000
                 sim_short[k].append(j+1 + (i+1) / 1000)
-                #print(sim_short[k])
-                #grupocorto[grupo_tag[k] - 1].append(j+1 + (i+1) / 1000)
                 grupocorto[grupo_tag[k]-1].append(j + 1 + (i + 1) / 1000)
-                #print(grupocorto[grupo_tag[k] - 1])
                 if k not in burst:
                     sim_short_con_2.append(j+1 + (i+1) / 1000)
-                    #print(sim_short_con_2)
                 if k not in list_aferentes:
                     sim_short_con.append(j+1 + (i+1)/ 1000)
-                    #print(sim_short_con)
 
         contador2 = np.ceil(contador[:, 0] / delays)
-        #print(contador2)
         contador[:, 0] -= contador[:, 1]
-        #print(contador[:, 0])
         contador[:, 1] = np.ceil(contador[:, 0] / delays)
         y = np.where(contador[:, 1] < contador2)[0]
-        #print(y)
 
         if y.size > 0:
             inputs = circuito[y, :].sum(axis=0) if y.size > 1 else circuito[y, :].reshape(-1)
-            # print(inputs)
             receptor = np.intersect1d(np.where(inputs != 0)[0], pos_reg)
-            # print(receptor)
             # Cálculo seguro aunque receptor esté vacío
             t_sel = t[receptor]
             tclave_sel = tclave[receptor]
@@ -330,81 +285,20 @@ for j in range(tiempo):
             inputs_sel = inputs[receptor]
             delta = (tclave_sel - (t_sel % (periodo_sel / 2))) * (inputs_sel / 20)
             t[receptor] = np.round(t_sel + delta)
-            #print(t[receptor])
             reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
-            #print(reg[receptor])
 
     sim_con.extend(sim_short_con)
-    #print(sim_con)
     sim_con_2.extend(sim_short_con_2)
-    #print(sim_con_2)
     for i in range(size):
         sim[i].extend(sim_short[i])
-        #print(sim[i])
     for i in range(grupos_nume):
         grupo[i].extend(grupocorto[i])
-        #print(grupo[i])
 
 # Convertir la simulación final en un DataFrame
 maximo = max(len(s) for s in sim)
-#print(maximo)
 final = pd.DataFrame({f"U{str(i).zfill(2)}": sim[i] + [np.nan] * (maximo - len(sim[i])) for i in range(size)})
-#print(sim)
 print(final)
 final.columns = tipos
 
-# Guardamos la salida de 'final' en un csv, con separación de ';' y sin la primera columna ni el encabezado,
-#   únicamente los datos
-final.to_csv("salida_final_python3.csv", index=False, header=False, sep=';') #Donde pone NaN no se pone nada en el excel??
-                                                                            # es lo mismo nada que un cero????
-
-
-
-
-
-#GUARDARME 'FINAL' EN UN ARCHIVO Y COMPARARLO CON R
-#HACERLO UNAS 10 VECES Y CALCULAR MEDIA Y VER QUE EN AMBAS SEAN PARECIDAS
-#MEDIR TIEMPOS DE EJECUCIÓN ANTES Y DE DESPUÉS DE HACER LA OPTIMIZACIÓN, VARIAS VECES
-
-
-
-
-
-
-
-
-
-
-
-
-#aceptables_RFB = aceptables_RFB[1:] + [aceptables_RFB[-1] + 1]
-#aceptables_RS = aceptables_RS[1:] + [aceptables_RS[-1] + 1]
-# aceptables_RSB = [x + 1 for x in aceptables_RSB]
-
-#burst = burst[1:] + [burst[-1] + 1]
-
-#pos_irreg = pos_irreg[1:] + [pos_irreg[-1] + 1]
-#pos_reg = pos_reg[1:] + [pos_reg[-1] + 1]
-
-'''
-grupo.append(sim_con)  # <-- si tienes este paso, mantenlo
-maximo = max(len(s) for s in sim)
-final = pd.DataFrame(np.nan, index=range(maximo), columns=range(size))
-for i in range(size):
-    final.iloc[:len(sim[i]), i] = sim[i]
-colnames_temp = [f"U{str(i + 1).zfill(2)}" for i in range(size)]
-final.columns = colnames_temp
-final.columns = tipos
-print(final)
-'''
-
-'''
-if y.size > 0:
-    inputs = circuito[y, :].sum(axis=0) if y.size > 1 else circuito[y, :]
-    #print(inputs)
-    receptor = np.intersect1d(np.where(inputs != 0)[0], pos_reg)
-    #print(receptor)
-    t[receptor] = np.round(t[receptor] + ((tclave[receptor] - t[receptor] % (periodo[receptor] / 2)) * (inputs[receptor] / 20)))
-    print(t[receptor])
-    reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
-'''
+# Guardamos la salida de 'final' en un csv, con separación de ';' y sin la primera columna ni el encabezado, únicamente los datos
+final.to_csv("salida_final_python10.csv", index=False, header=False, sep=';')
