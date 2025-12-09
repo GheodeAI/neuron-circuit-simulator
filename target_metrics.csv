@@ -1,6 +1,6 @@
-,IS,ISB,IFB,A,RS,RSB,RFB
-Mean_Freq_5m,1.16,1.55,0.54,,5.62,4.32,7.4
-CV_class,,,,,0.28,0.39,0.32
-Mean_IntraB_Freq,,0.19,0.33,,,0.31,4.11
-Mean_InterB_Freq,,15.1,123.7,,,0.39,137.8
-CV_intraB,,,,,,0.9,0.16
+                , IS  , ISB  , IFB   , A, RS  , RSB , RFB
+Mean_Freq_5m    , 1.16,  1.55,   0.54,  , 5.62, 4.32,   7.4
+CV_class        ,     ,      ,       ,  , 0.28, 0.39,   0.32
+Mean_IntraB_Freq,     ,  0.19,   0.33,  ,     , 0.31,   4.11
+Mean_InterB_Freq,     , 15.1 , 123.7 ,  ,     , 0.39, 137.8
+CV_intraB       ,     ,      ,       ,  ,     , 0.9 ,   0.16
