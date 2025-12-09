@@ -1,17 +1,18 @@
 import numpy as np
 import metaheuristic_designer as mhd
 # from simulator_fn import run_simulator, generate_random_neuron_matrix
-from simulator_fn import run_simulator, generate_random_neuron_matrix
+from simulator_fn import run_simulator, generate_random_neuron_matrix, calculate_frequency_left
 
 
 class NeuronCircuitFit(mhd.VectorObjectiveFunc):
-    def __init__(self, simulation_time=100, neuron_amounts=(0, 0, 0, 0, 0, 12, 6, 2), burst_thesh=0.2, target_freq=0.17, repetitions=3):
+    def __init__(self, simulation_time=100, neuron_amounts=(0, 0, 0, 0, 0, 12, 6, 2), bin_size=0.2, target_freq=0.17, repetitions=3):
         self.simulation_time = simulation_time
         self.neuron_amounts = neuron_amounts
         self.n_neurons = sum(neuron_amounts)
         self.target_freq = target_freq
         self.repetitions = repetitions
-        self.burst_thesh = burst_thesh
+        self.bin_size = bin_size
+        self.d = 1
         self.alpha = 0.001
         self.beta = 0.001
         self.gamma = 10
@@ -26,45 +27,26 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
         hmean_freq = 0
         hmean_naive_freq = 0
         mean_lowact = 0
+        mean_n_events = 0
         for _ in range(self.repetitions):
             sim = run_simulator(
                 volt_mat, conn_matrix=conn_mat, simulation_time=self.simulation_time, neuron_amounts=self.neuron_amounts, record_volt=False
             )
 
-            mean_n_activations = 0
-            mean_n_naive_activations = 0
-            n_non_empty_activtions = 0
+            freq_graph = calculate_frequency_left(sim, bin_size=self.bin_size)
+            thresh = freq_graph.mean() + self.d * freq_graph.mean()
+            mean_n_events += np.count_nonzero(freq_graph > thresh)
+
             n_low_activtions = 0
             for activations in sim:
-                n_naive_activations = len(activations)
-                mean_n_naive_activations += n_naive_activations
-
-                timing_diffs = np.diff(activations)
-                n_activations = np.count_nonzero(timing_diffs > self.burst_thesh)
-                mean_n_activations += n_activations
-
-                n_non_empty_activtions += int(n_activations > 0)
-                n_low_activtions += int(n_activations < 3)
-                
+                n_low_activtions += int(len(activations) < 3)
             mean_lowact += n_low_activtions/len(sim)
 
-
-            if n_non_empty_activtions != 0:
-                mean_n_activations /= n_non_empty_activtions
-                if mean_n_activations != 0: 
-                    hmean_freq += self.simulation_time / mean_n_activations
-
-                mean_n_naive_activations /= n_non_empty_activtions
-                if mean_n_activations != 0: 
-                    hmean_naive_freq += self.simulation_time / mean_n_naive_activations
-
-        mean_lowact /= self.repetitions
-        mean_naive_freq = self.repetitions / hmean_naive_freq
-
-        if hmean_freq != 0: 
-            mean_freq = self.repetitions / hmean_freq
-        else:
+        mean_n_events /= self.repetitions
+        if mean_n_events == 0:
             mean_freq = np.inf
+        else:
+            mean_freq = self.simulation_time / mean_n_events
 
         freq_target = (mean_freq - self.target_freq) ** 2
 
@@ -73,7 +55,7 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
         adjmat = adjmat[-3:, -3:]
 
         # A bit of a hack to calculate the number of isolated subgraphs. Ignore connections from a node to itself.
-        # In bigger graphs you could do BFS or calculate (I - A)^{n-1} and check that every non-diagonal entries are 1.
+        # In bigger graphs you could do BFS or calculate (I - A)^{n-1} and check that every non-diagonal entry is 1.
         # There are 2 subgraphs if no nodes have at least 2 edges. There are 3 if there are no edges.
         # Convert the directed graph to an undirected graph, then perform the algorithm.
         v01 = int(adjmat[0,1] | adjmat[1,0])
@@ -81,16 +63,7 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
         v02 = int(adjmat[0,2] | adjmat[2,0])
 
         n_isolated_subgraphs = 3 - ((v01 | v12) + (v02 | v12) + (v01 | v02)) + (v01 | v12 | v02)
-        # print(freq_target)
-        # print(mean_lowact)
-        # print(mean_naive_freq)
-        # print(n_isolated_subgraphs-1)
-        # print(self.beta * mean_naive_freq)
-        # print(self.alpha * mean_lowact)
-        # print(self.gamma * (n_isolated_subgraphs - 1))
-        # print(freq_target + self.alpha * mean_lowact + self.beta * mean_naive_freq + self.gamma * (n_isolated_subgraphs - 1))
-
-        return freq_target + self.alpha * mean_lowact + self.beta * mean_naive_freq + self.gamma * (n_isolated_subgraphs - 1)
+        return freq_target + self.alpha * mean_lowact + self.beta * (n_isolated_subgraphs - 1)
 
     def repair_solution(self, solution):
         return solution

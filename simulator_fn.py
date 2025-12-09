@@ -257,6 +257,7 @@ def run_simulator(adj_matrix, conn_matrix=None, simulation_time=100, neuron_amou
         result = activations, volt_full
     else:
         result = activations
+
     return result
 
 def generate_random_neuron_matrix(activation_p = None):
@@ -271,16 +272,65 @@ def generate_random_neuron_matrix(activation_p = None):
                 adjmat[idx_i, idx_j] = 0
     conn_matrix = np.random.randint(1, 6, size=(3, 3))
 
-    # adjmat = np.empty((8, 8))
-    # for idx_i, name in enumerate(["ISe", "ISi", "IFB", "ISB", "A", "RS", "RSB", "RFB"]):
-    #     for idx_j, _ in enumerate(["ISe", "ISi", "IFB", "ISB", "A", "RS", "RSB", "RFB"]):
-    #         if np.random.uniform(0,1) < activation_p:
-    #             adjmat[idx_i, idx_j] = np.random.choice(connection_strengths[name])
-    #         else:
-    #             adjmat[idx_i, idx_j] = 0
-    # conn_matrix = np.random.randint(1, 6, size=(8, 8))
-
     return np.array([adjmat, conn_matrix]).flatten()
+
+def calculate_frequency_left(activations, bin_size=0.2):
+    """
+    Calculates the event frequency at each point by calculating the frequency of a 
+    bin of the specified size centered at each activation.
+    """
+    
+    collapsed_sim = np.asarray(sorted(list(set(sum(activations, start=[])))))
+    sim_len = len(collapsed_sim)
+    freq = np.empty(len(collapsed_sim))
+
+    for idx, act_time in enumerate(collapsed_sim):
+        ## Count number of activations in bin 
+        # Get start and end of the bin (half way each size)
+        bin_start_idx = np.searchsorted(collapsed_sim, act_time - bin_size, side='left')
+
+        bin_start = collapsed_sim[bin_start_idx]
+        
+        # Number of activations in the bin = size of the bin
+        n_activations_in_bin = idx - bin_start_idx + 1
+
+        # Use frequency formula
+        if act_time - bin_start > bin_size/2:
+            freq[idx] = (n_activations_in_bin-1) / (act_time - bin_start)
+        else:
+            freq[idx] = n_activations_in_bin / bin_size
+        
+    return freq
+
+def calculate_frequency_centered(activations, bin_size=0.2):
+    """
+    Calculates the event frequency at each point by calculating the frequency of a 
+    bin of the specified size centered at each activation.
+    """
+    
+    collapsed_sim = np.asarray(sorted(list(set(sum(sim, start=[])))))
+    sim_len = len(collapsed_sim)
+    freq = np.empty(len(collapsed_sim))
+
+    for idx, act_time in enumerate(collapsed_sim):
+        ## Count number of activations in bin 
+        # Get start and end of the bin (half way each size)
+        bin_start_idx = np.searchsorted(collapsed_sim, act_time - bin_size/2, side='left')
+        bin_end_idx = np.searchsorted(collapsed_sim, act_time + bin_size/2, side='right') - 1
+
+        bin_start = collapsed_sim[bin_start_idx]
+        bin_end = collapsed_sim[bin_end_idx]
+        
+        # Number of activations in the bin = size of the bin
+        n_activations_in_bin = bin_end_idx - bin_start_idx + 1
+
+        # Use frequency formula
+        if bin_end - bin_start > bin_size/2:
+            freq[idx] = (n_activations_in_bin-1) / (bin_end - bin_start)
+        else:
+            freq[idx] = n_activations_in_bin / bin_size
+        
+    return freq_list
 
 def get_metrics(sim, simulation_time, burst_thesh=0.2):
     hmean_freq = 0
