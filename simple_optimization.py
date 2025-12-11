@@ -4,9 +4,7 @@ import metaheuristic_designer as mhd
 from simulator_fn import *
 from fitness_fn_simple import *
 
-
 def neuron_operator_volt(neuron_matrix, _1, _2):
-    # print(neuron_matrix)
     random_matrix = generate_random_neuron_matrix(None)[:9]
     mask = np.zeros(9, dtype=bool)
     mask[:2] = 1
@@ -14,12 +12,11 @@ def neuron_operator_volt(neuron_matrix, _1, _2):
     neuron_matrix[mask] = random_matrix[mask]
     return neuron_matrix
 
-def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, population_size=50, execution_idx="0"):
-    objfunc = NeuronCircuitFit(simulation_time=simulation_time, repetitions=fitness_repetitions)
+def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, population_size=50, execution_idx="0", threshold=2):
+    objfunc = NeuronCircuitFit(simulation_time=simulation_time, repetitions=fitness_repetitions, d=threshold)
 
     encoding = NeuronAdjMatrixSimple()
     initializer = NeuronAdjMatrixSimpleInitializer(population_size, activation_p=0.6, encoding=encoding)
-    # mutation = mhd.operators.VectorOperator("RandomMask", {"N": 4})
     mutation = mhd.operators.MetaOperator(
         "Split",
         [
@@ -37,7 +34,7 @@ def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, 
     alg = mhd.algorithms.GeneralAlgorithm(
         objfunc,
         search_strategy,
-        {"stop_cond": "time_limit", "time_limit": optimization_time, "verbose": True, "v_timer": 0.5}
+        {"stop_cond": "time_limit or convergence", "time_limit": optimization_time, "patience": 10, "verbose": True, "v_timer": 0.5}
     )
 
     try:
@@ -56,7 +53,6 @@ def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, 
     with open(f"./solutions/population_fitness-{execution_idx}.txt", "w") as f:
         f.write(", ".join(map(str, result.fitness * -1)))
     
-    # alg.display_report(show_plots=True, save_fig=True, fig_name=f"./solutions/fitness_history-{execution_idx}.png")
     alg.display_report(show_plots=True)
 
 if __name__ == "__main__":
@@ -66,6 +62,14 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--repetitions", dest="repetitions", help="Specify an algorithm", default=5, type=int)
     parser.add_argument("-p", "--population_size", dest="population_size", help="Specify an algorithm", default=50, type=int)
     parser.add_argument("-x", "--execution_idx", dest="execution_idx", help="Specify an algorithm", default="0")
+    parser.add_argument("-d", "--threshold", dest="threshold", help="Selct the threshold for the syncronous events", type=float, default=2)
     args = parser.parse_args()
 
-    main(optimization_time=args.optim_time, simulation_time=args.simtime, fitness_repetitions=args.repetitions, population_size=args.population_size, execution_idx=args.execution_idx)
+    main(
+        optimization_time=args.optim_time,
+        simulation_time=args.simtime,
+        fitness_repetitions=args.repetitions,
+        population_size=args.population_size,
+        execution_idx=args.execution_idx,
+        threshold=args.threshold
+    )

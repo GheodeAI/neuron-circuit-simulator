@@ -274,7 +274,39 @@ def generate_random_neuron_matrix(activation_p = None):
 
     return np.array([adjmat, conn_matrix]).flatten()
 
-def calculate_frequency_left(activations, bin_size=0.2):
+def calculate_frequency(activations, simulation_time=100, sampling=0.001, bin_size=0.2, window_adjust="left"):
+    """
+    Calculates the frequency of activations with a window of size `bin_size`.
+
+    Returns a signal of frequencies.
+    """
+    
+    collapsed_sim = np.asarray(sorted(list(set(sum(activations, start=[])))))
+    sim_len = len(collapsed_sim)
+    x = np.arange(simulation_time, step=sampling)
+    freq = np.empty_like(x)
+    
+    for idx, x_sample in enumerate(x):
+        ## Count number of activations in bin 
+        # Get start and end of the bin (half way each size)
+        if window_adjust == "left":
+            bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side='left')
+            bin_end_idx = np.searchsorted(collapsed_sim, x_sample, side='right')
+
+        bin_start = collapsed_sim[bin_start_idx]
+        
+        # Number of activations in the bin = size of the bin
+        n_activations_in_bin = bin_end_idx - bin_start_idx + 1
+
+        # Use frequency formula
+        if x_sample - bin_start > bin_size/2:
+            freq[idx] = (n_activations_in_bin-1) / (x_sample - bin_start)
+        else:
+            freq[idx] = n_activations_in_bin / bin_size
+        
+    return freq
+
+def calculate_frequency_irregular(activations, simulation_time=100, sampling=0.001, bin_size=0.2, window_adjust="left"):
     """
     Calculates the event frequency at each point by calculating the frequency of a 
     bin of the specified size centered at each activation.
@@ -282,55 +314,54 @@ def calculate_frequency_left(activations, bin_size=0.2):
     
     collapsed_sim = np.asarray(sorted(list(set(sum(activations, start=[])))))
     sim_len = len(collapsed_sim)
-    freq = np.empty(len(collapsed_sim))
-
-    for idx, act_time in enumerate(collapsed_sim):
-        ## Count number of activations in bin 
-        # Get start and end of the bin (half way each size)
-        bin_start_idx = np.searchsorted(collapsed_sim, act_time - bin_size, side='left')
-
-        bin_start = collapsed_sim[bin_start_idx]
-        
-        # Number of activations in the bin = size of the bin
-        n_activations_in_bin = idx - bin_start_idx + 1
-
-        # Use frequency formula
-        if act_time - bin_start > bin_size/2:
-            freq[idx] = (n_activations_in_bin-1) / (act_time - bin_start)
-        else:
-            freq[idx] = n_activations_in_bin / bin_size
-        
-    return freq
-
-def calculate_frequency_centered(activations, bin_size=0.2):
-    """
-    Calculates the event frequency at each point by calculating the frequency of a 
-    bin of the specified size centered at each activation.
-    """
+    x = np.arange(simulation_time, step=sampling)
+    freq = np.empty(sim_len)
     
-    collapsed_sim = np.asarray(sorted(list(set(sum(sim, start=[])))))
-    sim_len = len(collapsed_sim)
-    freq = np.empty(len(collapsed_sim))
-
-    for idx, act_time in enumerate(collapsed_sim):
+    for idx, x_sample in enumerate(collapsed_sim):
         ## Count number of activations in bin 
         # Get start and end of the bin (half way each size)
-        bin_start_idx = np.searchsorted(collapsed_sim, act_time - bin_size/2, side='left')
-        bin_end_idx = np.searchsorted(collapsed_sim, act_time + bin_size/2, side='right') - 1
+        if window_adjust == "left":
+            bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side='left')
+            bin_end_idx = idx
 
         bin_start = collapsed_sim[bin_start_idx]
-        bin_end = collapsed_sim[bin_end_idx]
         
         # Number of activations in the bin = size of the bin
         n_activations_in_bin = bin_end_idx - bin_start_idx + 1
 
         # Use frequency formula
-        if bin_end - bin_start > bin_size/2:
-            freq[idx] = (n_activations_in_bin-1) / (bin_end - bin_start)
+        if x_sample - bin_start > bin_size/2:
+            freq[idx] = (n_activations_in_bin-1) / (x_sample - bin_start)
         else:
             freq[idx] = n_activations_in_bin / bin_size
         
-    return freq_list
+    return freq
+
+def count_peaks(seq, d=1.5, trim_ratio=0.05):
+    """
+    Given a signal, counts the number of peaks in the signal as the number of regions that cross
+    a threshold of the mean + d*std.
+
+    Computed as the number of times the signal goes from being below the threshold to being above it.
+    """
+
+    # Ignore the first p% of data to calculate statistics, startup is not representative of the signal
+    if trim_ratio == 0:
+        seq_trimmed = seq
+    else:
+        start_idx = int(len(seq) * (1 - trim_ratio))
+        seq_trimmed = seq[start_idx:]
+
+    # Calculate threshold
+    seq_mean = seq_trimmed.mean()
+    seq_std = seq_trimmed.std()
+    threshold = seq_mean + d * seq_std
+
+    # Count number of samples
+    outlier_samples = np.ndarray.astype(seq > threshold, int)
+    n_events = np.count_nonzero(np.ediff1d(outlier_samples) == 1)
+
+    return n_events
 
 def get_metrics(sim, simulation_time, burst_thesh=0.2):
     hmean_freq = 0

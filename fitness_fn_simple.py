@@ -1,18 +1,18 @@
 import numpy as np
 import metaheuristic_designer as mhd
 # from simulator_fn import run_simulator, generate_random_neuron_matrix
-from simulator_fn import run_simulator, generate_random_neuron_matrix, calculate_frequency_left
+from simulator_fn import run_simulator, generate_random_neuron_matrix, calculate_frequency, count_peaks
 
 
 class NeuronCircuitFit(mhd.VectorObjectiveFunc):
-    def __init__(self, simulation_time=100, neuron_amounts=(0, 0, 0, 0, 0, 12, 6, 2), bin_size=0.2, target_freq=0.17, repetitions=3):
+    def __init__(self, simulation_time=100, neuron_amounts=(0, 0, 0, 0, 0, 12, 6, 2), bin_size=0.2, target_freq=0.17, repetitions=3, d=1.0):
         self.simulation_time = simulation_time
         self.neuron_amounts = neuron_amounts
         self.n_neurons = sum(neuron_amounts)
         self.target_freq = target_freq
         self.repetitions = repetitions
         self.bin_size = bin_size
-        self.d = 1
+        self.d = d
         self.alpha = 0.001
         self.beta = 0.001
         self.gamma = 10
@@ -24,6 +24,8 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
         volt_mat = solution[0]
         conn_mat = solution[1]
 
+        analysis_start = 1000 # starting point from which to calculate the statistics of the frequency graph, in ms
+
         hmean_freq = 0
         hmean_naive_freq = 0
         mean_lowact = 0
@@ -33,9 +35,8 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
                 volt_mat, conn_matrix=conn_mat, simulation_time=self.simulation_time, neuron_amounts=self.neuron_amounts, record_volt=False
             )
 
-            freq_graph = calculate_frequency_left(sim, bin_size=self.bin_size)
-            thresh = freq_graph.mean() + self.d * freq_graph.mean()
-            mean_n_events += np.count_nonzero(freq_graph > thresh)
+            freq_graph = calculate_frequency(sim, simulation_time=self.simulation_time, bin_size=self.bin_size)
+            mean_n_events += count_peaks(freq_graph, d=self.d)
 
             n_low_activtions = 0
             for activations in sim:
@@ -46,7 +47,7 @@ class NeuronCircuitFit(mhd.VectorObjectiveFunc):
         if mean_n_events == 0:
             mean_freq = np.inf
         else:
-            mean_freq = self.simulation_time / mean_n_events
+            mean_freq = mean_n_events / self.simulation_time
 
         freq_target = (mean_freq - self.target_freq) ** 2
 

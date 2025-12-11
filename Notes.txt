@@ -1,3 +1,1 @@
 New metric results:
-- NM1: d=1.5
-- NM2: d=1
