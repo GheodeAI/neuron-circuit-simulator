@@ -139,10 +139,10 @@ def run_simulator(adj_matrix, conn_matrix=None, simulation_time=100, neuron_amou
                 continue
 
             # Generate a fixed number of connections with the specified strength
-            total_neurons = len(idx_to_change_row)*len(idx_to_change_col)
+            total_neurons = len(idx_to_change_row) * len(idx_to_change_col)
 
             conn_values = np.zeros(total_neurons)
-            idx_to_add = np.random.permutation(total_neurons)[:min(neurons_to_connect, total_neurons)]
+            idx_to_add = np.random.permutation(total_neurons)[: min(neurons_to_connect, total_neurons)]
 
             conn_values[idx_to_add] = volt_strength
             conn_values = conn_values.reshape((len(idx_to_change_row), len(idx_to_change_col)))
@@ -200,15 +200,9 @@ def run_simulator(adj_matrix, conn_matrix=None, simulation_time=100, neuron_amou
         time_t_ms = time_t / 1000
         t = t + 1
 
-        # inputs += np.random.normal(0, 1, inputs.shape)
-
         volt += 0.5 * ((0.04 * volt + 5) * volt + 140 - reg + inputs)
-        # reg[pos_irreg] += 0.5 * a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
-        # reg[pos_reg] -= 0.5 * np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
-
         volt += 0.5 * ((0.04 * volt + 5) * volt + 140 - reg + inputs)
-        # reg[pos_irreg] += 0.5 * a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
-        # reg[pos_reg] -= 0.5 * np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
+
         reg[pos_irreg] += a[pos_irreg] * (b[pos_irreg] * volt[pos_irreg] - reg[pos_irreg])
         reg[pos_reg] -= np.sin(t[pos_reg] * a[pos_reg]) * b[pos_reg]
 
@@ -252,7 +246,6 @@ def run_simulator(adj_matrix, conn_matrix=None, simulation_time=100, neuron_amou
             t[receptor] = np.round(t_sel + delta)
             reg[receptor] = punto_medio[receptor] + b[receptor] * np.cos(a[receptor] * t[receptor]) / a[receptor]
 
-    
     if record_volt:
         result = activations, volt_full
     else:
@@ -260,13 +253,14 @@ def run_simulator(adj_matrix, conn_matrix=None, simulation_time=100, neuron_amou
 
     return result
 
-def generate_random_neuron_matrix(activation_p = None):
+
+def generate_random_neuron_matrix(activation_p=None):
     adjmat = np.empty((3, 3))
     for idx_i, name in enumerate(["RS", "RSB", "RFB"]):
         for idx_j, _ in enumerate(["RS", "RSB", "RFB"]):
             if activation_p is None:
                 adjmat[idx_i, idx_j] = np.random.choice(np.concatenate([[0], connection_strengths[name]]))
-            elif np.random.uniform(0,1) < activation_p:
+            elif np.random.uniform(0, 1) < activation_p:
                 adjmat[idx_i, idx_j] = np.random.choice(connection_strengths[name])
             else:
                 adjmat[idx_i, idx_j] = 0
@@ -274,70 +268,116 @@ def generate_random_neuron_matrix(activation_p = None):
 
     return np.array([adjmat, conn_matrix]).flatten()
 
-def calculate_frequency(activations, simulation_time=100, sampling=0.001, bin_size=0.2, window_adjust="left"):
+
+def calculate_frequency_uniform(activations, simulation_time=100, sampling=0.001, bin_size=0.2, window_adjust="left", return_counts=False):
     """
     Calculates the frequency of activations with a window of size `bin_size`.
 
     Returns a signal of frequencies.
     """
-    
+
     collapsed_sim = np.asarray(sorted(list(set(sum(activations, start=[])))))
     sim_len = len(collapsed_sim)
     x = np.arange(simulation_time, step=sampling)
     freq = np.empty_like(x)
-    
+    if return_counts:
+        counts = np.empty_like(freq)
+
     for idx, x_sample in enumerate(x):
-        ## Count number of activations in bin 
-        # Get start and end of the bin (half way each size)
-        if window_adjust == "left":
-            bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side='left')
-            bin_end_idx = np.searchsorted(collapsed_sim, x_sample, side='right')
+        ## Count number of activations in bin
+        # Get start and end indices of the bin
+        match window_adjust:
+            case "left":
+                bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side="left")
+                bin_end_idx = np.searchsorted(collapsed_sim, x_sample, side="right") - 1
+            case "center":
+                bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size / 2, side="left")
+                bin_end_idx = np.searchsorted(collapsed_sim, x_sample + bin_size / 2, side="right") - 1
 
         bin_start = collapsed_sim[bin_start_idx]
-        
+        bin_end = collapsed_sim[bin_end_idx]
+
         # Number of activations in the bin = size of the bin
         n_activations_in_bin = bin_end_idx - bin_start_idx + 1
 
         # Use frequency formula
-        if x_sample - bin_start > bin_size/2:
-            freq[idx] = (n_activations_in_bin-1) / (x_sample - bin_start)
+        if return_counts:
+            counts[idx] = n_activations_in_bin
+
+        if bin_end - bin_start > bin_size / 2:
+            freq[idx] = (n_activations_in_bin - 1) / (bin_end - bin_start)
         else:
             freq[idx] = n_activations_in_bin / bin_size
-        
-    return freq
 
-def calculate_frequency_irregular(activations, simulation_time=100, sampling=0.001, bin_size=0.2, window_adjust="left"):
+    if return_counts:
+        result = freq, counts
+    else:
+        result = freq
+    return result
+
+
+def calculate_frequency(activations, simulation_time=100, bin_size=0.2, window_adjust="left", return_counts=False):
     """
-    Calculates the event frequency at each point by calculating the frequency of a 
+    Calculates the event frequency at each point by calculating the frequency of a
     bin of the specified size centered at each activation.
     """
-    
-    collapsed_sim = np.asarray(sorted(list(set(sum(activations, start=[])))))
+
+    collapsed_sim = np.asarray(sorted(sum(activations, start=[])))
     sim_len = len(collapsed_sim)
-    x = np.arange(simulation_time, step=sampling)
     freq = np.empty(sim_len)
-    
+    if return_counts:
+        counts = np.empty_like(freq)
+
     for idx, x_sample in enumerate(collapsed_sim):
-        ## Count number of activations in bin 
+        ## Count number of activations in bin
         # Get start and end of the bin (half way each size)
         if window_adjust == "left":
-            bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side='left')
+            bin_start_idx = np.searchsorted(collapsed_sim, x_sample - bin_size, side="left")
             bin_end_idx = idx
 
         bin_start = collapsed_sim[bin_start_idx]
-        
+
         # Number of activations in the bin = size of the bin
         n_activations_in_bin = bin_end_idx - bin_start_idx + 1
 
         # Use frequency formula
-        if x_sample - bin_start > bin_size/2:
-            freq[idx] = (n_activations_in_bin-1) / (x_sample - bin_start)
+        if return_counts:
+            counts[idx] = n_activations_in_bin
+
+        if x_sample - bin_start > bin_size / 2:
+            freq[idx] = (n_activations_in_bin - 1) / (x_sample - bin_start)
         else:
             freq[idx] = n_activations_in_bin / bin_size
-        
-    return freq
 
-def count_peaks(seq, d=1.5, trim_ratio=0.05):
+    if return_counts:
+        result = freq, counts
+    else:
+        result = freq
+    return result
+
+
+def count_peaks_mean(seq, d=2, trim_ratio=0.05):
+    """
+    Given a signal, counts the number of peaks in the signal as the number of regions that cross
+    a threshold of the mean + d*std.
+
+    Computed as the number of times the signal goes from being below the threshold to being above it.
+    """
+    # Ignore the first p% of data to calculate statistics, startup is not representative of the signal
+    if trim_ratio == 0:
+        seq_trimmed = seq
+    else:
+        start_idx = int(len(seq) * trim_ratio)
+        seq_trimmed = seq[start_idx:]
+
+    # Calculate threshold
+    seq_mean = seq_trimmed.mean()
+    threshold = d * seq_mean
+
+    return count_peaks(seq, threshold)
+
+
+def count_peaks_std(seq, d=2, trim_ratio=0.05):
     """
     Given a signal, counts the number of peaks in the signal as the number of regions that cross
     a threshold of the mean + d*std.
@@ -349,7 +389,7 @@ def count_peaks(seq, d=1.5, trim_ratio=0.05):
     if trim_ratio == 0:
         seq_trimmed = seq
     else:
-        start_idx = int(len(seq) * (1 - trim_ratio))
+        start_idx = int(len(seq) * trim_ratio)
         seq_trimmed = seq[start_idx:]
 
     # Calculate threshold
@@ -357,11 +397,23 @@ def count_peaks(seq, d=1.5, trim_ratio=0.05):
     seq_std = seq_trimmed.std()
     threshold = seq_mean + d * seq_std
 
+    return count_peaks(seq, threshold)
+
+
+def count_peaks(seq, threshold):
+    """
+    Given a signal, counts the number of peaks in the signal as the number of regions that cross
+    a threshold of the mean + d*std.
+
+    Computed as the number of times the signal goes from being below the threshold to being above it.
+    """
+
     # Count number of samples
     outlier_samples = np.ndarray.astype(seq > threshold, int)
     n_events = np.count_nonzero(np.ediff1d(outlier_samples) == 1)
 
     return n_events
+
 
 def get_metrics(sim, simulation_time, burst_thesh=0.2):
     hmean_freq = 0
@@ -384,20 +436,19 @@ def get_metrics(sim, simulation_time, burst_thesh=0.2):
         n_low_activtions += int(n_activations < 3)
 
         if n_naive_activations > 0:
-            cv_acc += np.nanstd(activations)/np.nanmean(activations)
+            cv_acc += np.nanstd(activations) / np.nanmean(activations)
             cv_count += 1
 
-    cv = cv_acc/cv_count
-        
+    cv = cv_acc / cv_count
+
     if n_non_empty_activtions != 0:
         mean_n_naive_activations /= n_non_empty_activtions
-        if mean_n_naive_activations != 0: 
+        if mean_n_naive_activations != 0:
             hmean_naive_freq = simulation_time / mean_n_naive_activations
 
         mean_n_activations /= n_non_empty_activtions
-        if mean_n_activations != 0: 
+        if mean_n_activations != 0:
             hmean_freq = simulation_time / mean_n_activations
-
 
     return {
         "Freq": float(hmean_freq),
@@ -424,8 +475,8 @@ if __name__ == "__main__":
     # adj_matrix[4, 3] = 8
     # adj_matrix[3, 4] = 8
 
-    simulation_time=100
-    neuron_amounts=(0, 0, 0, 0, 0, 12, 6, 2)
+    simulation_time = 100
+    neuron_amounts = (0, 0, 0, 0, 0, 12, 6, 2)
 
     conn_matrix = np.random.randint(1, 6, size=adj_matrix.shape)
     # conn_matrix = np.random.randint(1, 2, size=adj_matrix.shape)
@@ -447,7 +498,6 @@ if __name__ == "__main__":
     print(t1 - t0)
 
     print(metrics)
-
 
     fig, ax = plt.subplots(2, 3, figsize=(12, 8))
     ax_flat = ax.flatten()

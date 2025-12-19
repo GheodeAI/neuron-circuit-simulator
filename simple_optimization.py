@@ -4,6 +4,7 @@ import metaheuristic_designer as mhd
 from simulator_fn import *
 from fitness_fn_simple import *
 
+
 def neuron_operator_volt(neuron_matrix, _1, _2):
     random_matrix = generate_random_neuron_matrix(None)[:9]
     mask = np.zeros(9, dtype=bool)
@@ -12,7 +13,8 @@ def neuron_operator_volt(neuron_matrix, _1, _2):
     neuron_matrix[mask] = random_matrix[mask]
     return neuron_matrix
 
-def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, population_size=50, execution_idx="0", threshold=2):
+
+def main(optimization_time, simulation_time, fitness_repetitions, population_size, execution_idx, threshold, patience):
     objfunc = NeuronCircuitFit(simulation_time=simulation_time, repetitions=fitness_repetitions, d=threshold)
 
     encoding = NeuronAdjMatrixSimple()
@@ -21,20 +23,23 @@ def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, 
         "Split",
         [
             mhd.OperatorFromLambda(neuron_operator_volt, vectorized=False),
-            mhd.operators.VectorOperator("MutSample", {"distrib": "Uniform", "low": 1, "up": 6, "N": 2}, encoding=mhd.encodings.TypeCastEncoding(int, float))
+            mhd.operators.VectorOperator(
+                "MutSample", {"distrib": "Uniform", "low": 1, "up": 6, "N": 2}, encoding=mhd.encodings.TypeCastEncoding(int, float)
+            ),
         ],
-        params={"mask": np.concatenate([np.zeros(9), np.ones(9)]),}
+        params={
+            "mask": np.concatenate([np.zeros(9), np.ones(9)]),
+        },
     )
-    # mutation = mhd.OperatorFromLambda(neuron_operator, vectorized=False)
     crossover = mhd.operators.VectorOperator("Multipoint")
     parent_sel_op = mhd.selection_methods.NullParentSelection()
     survivor_sel_op = mhd.selection_methods.SurvivorSelection("(m+n)")
 
-    search_strategy = mhd.strategies.ES(initializer, mutation, crossover, parent_sel_op, survivor_sel_op, {"offspringSize":population_size*3})
+    search_strategy = mhd.strategies.ES(initializer, mutation, crossover, parent_sel_op, survivor_sel_op, {"offspringSize": population_size * 3})
     alg = mhd.algorithms.GeneralAlgorithm(
         objfunc,
         search_strategy,
-        {"stop_cond": "time_limit or convergence", "time_limit": optimization_time, "patience": 10, "verbose": True, "v_timer": 0.5}
+        {"stop_cond": "time_limit or convergence", "time_limit": optimization_time, "patience": patience, "verbose": True, "v_timer": 0.5},
     )
 
     try:
@@ -52,17 +57,19 @@ def main(optimization_time=3600*10, simulation_time=100, fitness_repetitions=1, 
 
     with open(f"./solutions/population_fitness-{execution_idx}.txt", "w") as f:
         f.write(", ".join(map(str, result.fitness * -1)))
-    
+
     alg.display_report(show_plots=True)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--optim_time", dest="optim_time", help="Specify an algorithm", default=3600*10, type=float)
+    parser.add_argument("-t", "--optim_time", dest="optim_time", help="Specify an algorithm", default=3600 * 10, type=float)
     parser.add_argument("-s", "--simtime", dest="simtime", help="Specify an algorithm", default=100, type=int)
     parser.add_argument("-r", "--repetitions", dest="repetitions", help="Specify an algorithm", default=5, type=int)
     parser.add_argument("-p", "--population_size", dest="population_size", help="Specify an algorithm", default=50, type=int)
     parser.add_argument("-x", "--execution_idx", dest="execution_idx", help="Specify an algorithm", default="0")
-    parser.add_argument("-d", "--threshold", dest="threshold", help="Selct the threshold for the syncronous events", type=float, default=2)
+    parser.add_argument("-d", "--threshold", dest="threshold", help="Select the threshold for the syncronous events", type=float, default=2)
+    parser.add_argument("-c", "--patience", dest="patience", help="Stop after this number of iterations without improvement", type=int, default=5)
     args = parser.parse_args()
 
     main(
@@ -71,5 +78,6 @@ if __name__ == "__main__":
         fitness_repetitions=args.repetitions,
         population_size=args.population_size,
         execution_idx=args.execution_idx,
-        threshold=args.threshold
+        threshold=args.threshold,
+        patience=args.patience,
     )
